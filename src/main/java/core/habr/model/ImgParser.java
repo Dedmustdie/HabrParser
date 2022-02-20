@@ -1,8 +1,10 @@
 package core.habr.model;
+
 import core.Parser;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
 import java.util.ArrayList;
 
 /**
@@ -11,11 +13,12 @@ import java.util.ArrayList;
 public class ImgParser implements Parser<ArrayList<String>> {
     /**
      * Осуществляет парсинг заголовка, текста и URL картинки статьи.
+     *
      * @param document страница для парсинга.
      * @return заголовок, текст и URL картинки статьи.
      */
     @Override
-    public ArrayList<String> Parse(Document document) {
+    public ArrayList<String> parse(Document document) {
         ArrayList<String> list = new ArrayList<>();
 
         Elements elements = document.getElementsByAttributeValue("class", "tm-article-snippet");

@@ -1,18 +1,18 @@
 package core.habr;
+
 import core.habr.model.ArticleParser;
 import core.habr.model.ImgParser;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.IOException;
 import java.util.ArrayList;
 
 /**
  * Отвечает за реализацию пользовательского интерфейса пользователя.
  */
 public class UI extends JFrame {
-
     // Текстовые поля.
     JTextArea textArea = new JTextArea();
     JTextField textStart = new JTextField(10);
@@ -20,7 +20,7 @@ public class UI extends JFrame {
 
     public UI() {
         JFrame.setDefaultLookAndFeelDecorated(true);
-        setTitle("Habr");
+        setTitle("Habr Parser");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         // Устанавливаем размер окна интерфейса неизменяемым.
         setResizable(false);
@@ -99,11 +99,7 @@ public class UI extends JFrame {
                 parser.onCompletedList.add(new Completed());
                 parser.onNewDataList.add(new NewData());
 
-                try {
-                    parser.Start();
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                }
+                parser.start();
             }
         });
 
@@ -112,7 +108,7 @@ public class UI extends JFrame {
             @Override
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
-                parser.Abort();
+                parser.abort();
             }
         });
 
@@ -125,7 +121,7 @@ public class UI extends JFrame {
      */
     class Completed implements ParserWorker.OnCompletedHandler {
         @Override
-        public void OnCompleted(Object sender) {
+        public void onCompleted(Object sender) {
             textArea.append("\nПарсинг завершен!");
         }
     }
@@ -135,10 +131,10 @@ public class UI extends JFrame {
      */
     class NewData implements ParserWorker.OnNewDataHandler<ArrayList<String>> {
         @Override
-        public void OnNewData(Object sender, ArrayList<String> dataList) {
+        public void onNewData(Object sender, ArrayList<String> dataList) {
             textArea.setText("");
-            for (String s : dataList) {
-                textArea.append("\n"+s);
+            for (String data : dataList) {
+                textArea.append("\n" + data);
             }
         }
     }

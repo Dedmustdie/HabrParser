@@ -4,27 +4,41 @@ package core;
  * Задает основные поля и методы для реализации настроек парсера.
  */
 public abstract class ParserSettings {
-    /** Адрес сайта. */
+    /**
+     * Адрес сайта.
+     */
     public static String BASE_URL;
 
-    /** Префих страницы. */
+    /**
+     * Префих страницы.
+     */
     public static String PREFIX;
 
-    /** Путь для скачивания файлов. */
+    /**
+     * Путь для скачивания файлов.
+     */
     public static String SAVE_PATH;
 
-    /** Начало пагинации. */
+    /**
+     * Начало пагинации.
+     */
     protected int startPoint;
 
-    /** Конец пагинации. */
+    /**
+     * Конец пагинации.
+     */
     protected int endPoint;
 
-    /** Получает значение начала погинации. */
+    /**
+     * Получает значение начала погинации.
+     */
     public int getStartPoint() {
         return startPoint;
     }
 
-    /** Получает значение конца погинации. */
+    /**
+     * Получает значение конца погинации.
+     */
     public int getEndPoint() {
         return endPoint;
     }
