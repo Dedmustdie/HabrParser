@@ -1,5 +1,7 @@
 package core;
 
+import lombok.Getter;
+
 /**
  * Задает основные поля и методы для реализации настроек парсера.
  */
@@ -22,24 +24,18 @@ public abstract class ParserSettings {
     /**
      * Начало пагинации.
      */
+    @Getter
     protected int startPoint;
 
     /**
      * Конец пагинации.
      */
+    @Getter
     protected int endPoint;
 
     /**
-     * Получает значение начала погинации.
+     * Обработчик ошибок.
      */
-    public int getStartPoint() {
-        return startPoint;
-    }
-
-    /**
-     * Получает значение конца погинации.
-     */
-    public int getEndPoint() {
-        return endPoint;
-    }
+    @Getter
+    protected ErrorHandler errorHandler;
 }

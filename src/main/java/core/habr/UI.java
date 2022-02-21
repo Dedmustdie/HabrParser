@@ -1,5 +1,6 @@
 package core.habr;
 
+import core.ErrorHandler;
 import core.habr.model.ArticleParser;
 import core.habr.model.ImgParser;
 
@@ -43,7 +44,7 @@ public class UI extends JFrame {
 
         // Создаем кнопки.
         JButton startButton = new JButton("Start");
-        JButton abortButton = new JButton("Abort");
+        JButton clearButton = new JButton("Clear");
 
         // Добавляем элементы на правую панель.
         rightPanel.add(new JLabel("Первая страница"));
@@ -51,7 +52,7 @@ public class UI extends JFrame {
         rightPanel.add(new JLabel("Последняя страница"));
         rightPanel.add(textEnd);
         rightPanel.add(startButton);
-        rightPanel.add(abortButton);
+        rightPanel.add(clearButton);
 
         // Создаем текстовую панель с прокруткой.
         JScrollPane scroll = new JScrollPane(textArea,
@@ -60,8 +61,6 @@ public class UI extends JFrame {
 
         // Добавляем элементы на левую панель.
         leftPanel.add(scroll);
-
-        ParserWorker<ArrayList<String>> parser = new ParserWorker<>(new ArticleParser(), new ImgParser());
 
         // Обработчик нажатий на кнопку старт.
         startButton.addMouseListener(new MouseAdapter() {
@@ -94,24 +93,22 @@ public class UI extends JFrame {
                 }
 
                 // Устанавливаем настройки.
-                parser.setParserSettings(new HabrSettings(start, end));
+                ParserWorker<ArrayList<String>> parser = new ParserWorker<>(new ArticleParser(), new ImgParser(), new HabrSettings(start, end, new Error()));
+
                 // Добавляем обработчики.
                 parser.onCompletedList.add(new Completed());
                 parser.onNewDataList.add(new NewData());
-
                 parser.start();
             }
         });
 
-        // Обработчик нажатий на кнопку отмены.
-        abortButton.addMouseListener(new MouseAdapter() {
+        // Обработчик нажатий на кнопку отчистить.
+        clearButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                super.mouseClicked(e);
-                parser.abort();
+                textArea.setText("");
             }
         });
-
         pack();
         setVisible(true);
     }
@@ -122,7 +119,7 @@ public class UI extends JFrame {
     class Completed implements ParserWorker.OnCompletedHandler {
         @Override
         public void onCompleted(Object sender) {
-            textArea.append("\nПарсинг завершен!");
+            textArea.append("Парсинг завершен!");
         }
     }
 
@@ -132,10 +129,19 @@ public class UI extends JFrame {
     class NewData implements ParserWorker.OnNewDataHandler<ArrayList<String>> {
         @Override
         public void onNewData(Object sender, ArrayList<String> dataList) {
-            textArea.setText("");
             for (String data : dataList) {
-                textArea.append("\n" + data);
+                textArea.append(data);
             }
+        }
+    }
+
+    /**
+     * Обработчик полученных при парсинге данных.
+     */
+    class Error implements ErrorHandler {
+        @Override
+        public void onError(Object sender, String errorText) {
+            textArea.append("\nERROR: " + errorText + "\n");
         }
     }
 }

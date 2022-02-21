@@ -5,65 +5,59 @@ import core.ParserSettings;
 import org.jsoup.nodes.Document;
 import java.util.ArrayList;
 
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
 /**
  * Набор инструментов для работы с парсером.
  */
-@RequiredArgsConstructor
 public class ParserWorker<T> {
-    @NonNull
     @Getter
     @Setter
     private Parser<T> parser;
-    @NonNull
     @Getter
     @Setter
     private Parser<T> imgParser;
     @Getter
     private ParserSettings parserSettings;
     private HtmlLoader loader;
-    private boolean isActive;
 
-    /**
-     * Устанавливает настройки парсинга.
-     *
-     * @param parserSettings настройки парсинга.
-     */
-    public void setParserSettings(ParserSettings parserSettings) {
+    public ParserWorker(Parser<T> parser, Parser<T> imgParser, ParserSettings parserSettings) {
+        this.parser = parser;
+        this.imgParser = imgParser;
         this.parserSettings = parserSettings;
-        loader = new HtmlLoader(parserSettings);
+        loader = new HtmlLoader(parserSettings, parserSettings.getErrorHandler());
     }
 
     /**
      * Запускает парсинг сайта.
      */
     public void start() {
-        isActive = true;
         worker();
-    }
-
-    /**
-     * Останавливает парсер, начиная со следуйщей итерации.
-     */
-    public void abort() {
-        isActive = false;
     }
 
     /**
      * Устанавливает базувую реализацию обработчика получаемых данных.
      */
     public interface OnNewDataHandler<T> {
-        void onNewData(Object sender, T e);
+        /**
+         * Выполняет ряд действией в случае получения новых данных.
+         *
+         * @param sender класс отправитель.
+         * @param data новые данные.
+         */
+        void onNewData(Object sender, T data);
     }
 
     /**
      * Устанавливает базувую реализацию обработчика завершения парсинга.
      */
     public interface OnCompletedHandler {
+        /**
+         * Выполняет ряд действией в случае завершения парсинга.
+         *
+         * @param sender класс отправитель.
+         */
         void onCompleted(Object sender);
     }
 
@@ -74,29 +68,32 @@ public class ParserWorker<T> {
      * Производит действия, связанные с парсингом сайта.
      */
     private void worker() {
-        int start = parserSettings.getStartPoint(),
-                end = parserSettings.getEndPoint();
+        if (parserSettings.BASE_URL != null &&
+                parserSettings.PREFIX != null &&
+                parserSettings.SAVE_PATH != null) {
+            int start = parserSettings.getStartPoint(),
+                    end = parserSettings.getEndPoint();
 
-        for (int i = start; i <= end; i++) {
-            if (!isActive) {
+            for (int i = start; i <= end; i++) {
+                // Получаем страницу.
+                Document document = loader.getSourceByPageId(i);
+                if (document != null) {
+                    // Создаем загрузчик картинок.
+                    ImgDownloader imgDownloader = new ImgDownloader(ParserSettings.SAVE_PATH, parserSettings.getErrorHandler());
+
+                    // Загружаем изображения.
+                    imgDownloader.download(imgParser.parse(document));
+
+                    if (onNewDataList.size() > 0) {
+                        // Вызываем обработчик и передаем в него полученные данные.
+                        onNewDataList.get(0).onNewData(this, parser.parse(document));
+                    }
+                }
+            }
+            if (onCompletedList.size() > 0) {
+                // Вызываем обработчик завершения парсинга.
                 onCompletedList.get(0).onCompleted(this);
-                return;
             }
-            // Получаем страницу.
-            Document document = loader.getSourceByPageId(i);
-            if (document == null) {
-                return;
-            }
-            // Создаем загрузчик картинок.
-            ImgDownloader imgDownloader = new ImgDownloader(ParserSettings.SAVE_PATH);
-            // Загружаем изображения.
-            imgDownloader.download(imgParser.parse(document));
-            // Вызываем обработчик и передаем в него полученные данные.
-            onNewDataList.get(0).onNewData(this, parser.parse(document));
-
         }
-        // Вызываем обработчик завершения парсинга.
-        onCompletedList.get(0).onCompleted(this);
-        isActive = false;
     }
 }

@@ -22,14 +22,16 @@ public class ImgParser implements Parser<ArrayList<String>> {
         ArrayList<String> list = new ArrayList<>();
 
         Elements elements = document.getElementsByAttributeValue("class", "tm-article-snippet");
-        elements.forEach(element -> {
-            // Получаем элемент, содержащий URL картинки.
-            Element imgElement = element.getElementsByAttributeValue("class", "tm-article-snippet__lead-image").first();
-            if (imgElement != null) {
-                String imgUrl = imgElement.attr("src");
-                list.add(imgUrl);
-            }
-        });
+        if (elements.size() > 0) {
+            elements.forEach(element -> {
+                // Получаем элемент, содержащий URL картинки.
+                Element imgElement = element.getElementsByAttributeValue("class", "tm-article-snippet__lead-image").first();
+                if (imgElement != null) {
+                    String imgUrl = imgElement.attr("src");
+                    list.add(imgUrl);
+                }
+            });
+        }
         return list;
     }
 }

@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 
+import core.ErrorHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.NonNull;
 
@@ -16,7 +17,9 @@ import lombok.NonNull;
 public class ImgDownloader {
     @NonNull
     private String savePath;
-
+    @NonNull
+    private ErrorHandler errorHandler;
+    private ArrayList<ErrorHandler> onErrorList = new ArrayList<>();
     /**
      * Осуществляет загрузку изображений.
      *
@@ -30,12 +33,14 @@ public class ImgDownloader {
             File output = new File(savePath
                     + getImageName(url) + "." +
                     getImageExtension(url));
-
             try {
                 // Выгружаем изображение в файл.
                 ImageIO.write(ImageIO.read(new URL(url)), imgExtension, output);
-            } catch (IOException ignored) {
-                // Ничего не делаем в случае ошибки
+            } catch (IOException e) {
+                // Добавляем обработчик ошибок в лист.
+                onErrorList.add(errorHandler);
+                // Вызываем обработчик ошибок.
+                onErrorList.get(0).onError(this, e.getMessage());
             }
         }
     }
