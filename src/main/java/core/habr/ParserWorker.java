@@ -1,8 +1,10 @@
 package core.habr;
 
-import core.Parser;
 import core.ParserSettings;
-import org.jsoup.nodes.Document;
+import core.habr.model.ArticleParser;
+import core.habr.model.ImgParser;
+import lombok.val;
+
 import java.util.ArrayList;
 
 import lombok.Getter;
@@ -11,22 +13,22 @@ import lombok.Setter;
 /**
  * Набор инструментов для работы с парсером.
  */
-public class ParserWorker<T> {
+public class ParserWorker {
     @Getter
     @Setter
-    private Parser<T> parser;
+    private ArticleParser parser;
     @Getter
     @Setter
-    private Parser<T> imgParser;
+    private ImgParser imgParser;
     @Getter
-    private ParserSettings parserSettings;
-    private HtmlLoader loader;
+    private final ParserSettings parserSettings;
+    private final HtmlLoader loader;
 
-    public ParserWorker(Parser<T> parser, Parser<T> imgParser, ParserSettings parserSettings) {
+    public ParserWorker(final ArticleParser parser, final ImgParser imgParser, final ParserSettings parserSettings) {
         this.parser = parser;
         this.imgParser = imgParser;
         this.parserSettings = parserSettings;
-        loader = new HtmlLoader(parserSettings, parserSettings.getErrorHandler());
+        loader = new HtmlLoader(parserSettings.getErrorHandler());
     }
 
     /**
@@ -39,14 +41,14 @@ public class ParserWorker<T> {
     /**
      * Устанавливает базувую реализацию обработчика получаемых данных.
      */
-    public interface OnNewDataHandler<T> {
+    public interface OnNewDataHandler {
         /**
          * Выполняет ряд действией в случае получения новых данных.
          *
          * @param sender класс отправитель.
-         * @param data новые данные.
+         * @param data   новые данные.
          */
-        void onNewData(Object sender, T data);
+        void onNewData(final Object sender, ArrayList<String> data);
     }
 
     /**
@@ -58,39 +60,47 @@ public class ParserWorker<T> {
          *
          * @param sender класс отправитель.
          */
-        void onCompleted(Object sender);
+        void onCompleted(final Object sender);
     }
 
-    ArrayList<OnNewDataHandler> onNewDataList = new ArrayList<>();
-    ArrayList<OnCompletedHandler> onCompletedList = new ArrayList<>();
+
+    private final ArrayList<OnNewDataHandler> onNewDataList = new ArrayList<>();
+
+    public void setOnNewDataList(final OnNewDataHandler newDataHandler) {
+        onNewDataList.add(newDataHandler);
+    }
+
+    private final ArrayList<OnCompletedHandler> onCompletedList = new ArrayList<>();
+
+    public void setOnCompletedList(final OnCompletedHandler completedHandler) {
+        onCompletedList.add(completedHandler);
+    }
 
     /**
      * Производит действия, связанные с парсингом сайта.
      */
     private void worker() {
-        if (parserSettings.BASE_URL != null &&
-                parserSettings.PREFIX != null &&
-                parserSettings.SAVE_PATH != null) {
-            int start = parserSettings.getStartPoint(),
-                    end = parserSettings.getEndPoint();
+        if (!parserSettings.isErrorFlag()) {
+            val start = parserSettings.getStartPoint();
+            val end = parserSettings.getEndPoint();
 
-            for (int i = start; i <= end; i++) {
+            for (int index = start; index <= end; index++) {
                 // Получаем страницу.
-                Document document = loader.getSourceByPageId(i);
+                val document = loader.getSourceByPageId(index);
                 if (document != null) {
                     // Создаем загрузчик картинок.
-                    ImgDownloader imgDownloader = new ImgDownloader(ParserSettings.SAVE_PATH, parserSettings.getErrorHandler());
+                    val imgDownloader = new ImgDownloader(ParserSettings.SAVE_PATH, parserSettings.getErrorHandler());
 
                     // Загружаем изображения.
                     imgDownloader.download(imgParser.parse(document));
 
-                    if (onNewDataList.size() > 0) {
+                    if (!onNewDataList.isEmpty()) {
                         // Вызываем обработчик и передаем в него полученные данные.
                         onNewDataList.get(0).onNewData(this, parser.parse(document));
                     }
                 }
             }
-            if (onCompletedList.size() > 0) {
+            if (!onCompletedList.isEmpty()) {
                 // Вызываем обработчик завершения парсинга.
                 onCompletedList.get(0).onCompleted(this);
             }

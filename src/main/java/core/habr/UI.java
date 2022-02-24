@@ -3,6 +3,7 @@ package core.habr;
 import core.ErrorHandler;
 import core.habr.model.ArticleParser;
 import core.habr.model.ImgParser;
+import lombok.val;
 
 import javax.swing.*;
 import java.awt.*;
@@ -15,9 +16,9 @@ import java.util.ArrayList;
  */
 public class UI extends JFrame {
     // Текстовые поля.
-    JTextArea textArea = new JTextArea();
-    JTextField textStart = new JTextField(10);
-    JTextField textEnd = new JTextField(10);
+    final JTextArea textArea = new JTextArea();
+    final JTextField textStart = new JTextField(10);
+    final JTextField textEnd = new JTextField(10);
 
     public UI() {
         JFrame.setDefaultLookAndFeelDecorated(true);
@@ -27,8 +28,8 @@ public class UI extends JFrame {
         setResizable(false);
 
         // Создаем две панели.
-        JPanel rightPanel = new JPanel();
-        JPanel leftPanel = new JPanel();
+        val rightPanel = new JPanel();
+        val leftPanel = new JPanel();
 
         // Указываем размеры панелей.
         rightPanel.setPreferredSize(new Dimension(200, 500));
@@ -43,8 +44,8 @@ public class UI extends JFrame {
         leftPanel.setLayout(new GridLayout(0, 1, 1, 1));
 
         // Создаем кнопки.
-        JButton startButton = new JButton("Start");
-        JButton clearButton = new JButton("Clear");
+        val startButton = new JButton("Start");
+        val clearButton = new JButton("Clear");
 
         // Добавляем элементы на правую панель.
         rightPanel.add(new JLabel("Первая страница"));
@@ -55,7 +56,7 @@ public class UI extends JFrame {
         rightPanel.add(clearButton);
 
         // Создаем текстовую панель с прокруткой.
-        JScrollPane scroll = new JScrollPane(textArea,
+        val scroll = new JScrollPane(textArea,
                 JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
                 JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
 
@@ -76,6 +77,7 @@ public class UI extends JFrame {
                     }
                     return;
                 }
+
                 if (!textEnd.getText().matches("^(([1][0])|([1-9]))?")) {
                     textEnd.setText("1");
                     if (!textStart.getText().matches("^(([1][0])|([1-9]))?")) {
@@ -93,11 +95,11 @@ public class UI extends JFrame {
                 }
 
                 // Устанавливаем настройки.
-                ParserWorker<ArrayList<String>> parser = new ParserWorker<>(new ArticleParser(), new ImgParser(), new HabrSettings(start, end, new Error()));
+                val parser = new ParserWorker(new ArticleParser(), new ImgParser(), new HabrSettings(start, end, new Error()));
 
                 // Добавляем обработчики.
-                parser.onCompletedList.add(new Completed());
-                parser.onNewDataList.add(new NewData());
+                parser.setOnCompletedList(new Completed());
+                parser.setOnNewDataList(new NewData());
                 parser.start();
             }
         });
@@ -118,17 +120,17 @@ public class UI extends JFrame {
      */
     class Completed implements ParserWorker.OnCompletedHandler {
         @Override
-        public void onCompleted(Object sender) {
-            textArea.append("Парсинг завершен!");
+        public void onCompleted(final Object sender) {
+            textArea.append("Парсинг завершен!\n");
         }
     }
 
     /**
      * Обработчик полученных при парсинге данных.
      */
-    class NewData implements ParserWorker.OnNewDataHandler<ArrayList<String>> {
+    class NewData implements ParserWorker.OnNewDataHandler {
         @Override
-        public void onNewData(Object sender, ArrayList<String> dataList) {
+        public void onNewData(final Object sender, final ArrayList<String> dataList) {
             for (String data : dataList) {
                 textArea.append(data);
             }
@@ -140,7 +142,7 @@ public class UI extends JFrame {
      */
     class Error implements ErrorHandler {
         @Override
-        public void onError(Object sender, String errorText) {
+        public void onError(final Object sender, final String errorText) {
             textArea.append("\nERROR: " + errorText + "\n");
         }
     }

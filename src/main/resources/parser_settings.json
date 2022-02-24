@@ -1,0 +1,12 @@
+{
+  "habrSettings": {
+    "baseUrl": "https://habr.com/ru/news",
+    "prefix": "page{CurrentId}",
+    "savePath": "src/main/resources/Img"
+  },
+  "qwertySettings": {
+    "baseUrl": "https://habr.com/ru/news",
+    "prefix": "page{CurrentId}",
+    "savePath": "src/main/resources/Img"
+  }
+}

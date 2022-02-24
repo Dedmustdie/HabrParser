@@ -38,4 +38,10 @@ public abstract class ParserSettings {
      */
     @Getter
     protected ErrorHandler errorHandler;
+
+    /**
+     * Флаг ошибок.
+     */
+    @Getter
+    protected boolean errorFlag;
 }

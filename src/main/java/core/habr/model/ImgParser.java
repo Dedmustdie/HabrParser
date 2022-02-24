@@ -1,37 +1,36 @@
 package core.habr.model;
 
-import core.Parser;
+import lombok.val;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.util.ArrayList;
 
 /**
  * Содержит инструменты для парсинга URL всех картинок статей страницы.
  */
-public class ImgParser implements Parser<ArrayList<String>> {
+public class ImgParser {
     /**
      * Осуществляет парсинг заголовка, текста и URL картинки статьи.
      *
      * @param document страница для парсинга.
      * @return заголовок, текст и URL картинки статьи.
      */
-    @Override
-    public ArrayList<String> parse(Document document) {
-        ArrayList<String> list = new ArrayList<>();
+    public ArrayList<String> parse(final Document document) {
+        val list = new ArrayList<String>();
 
-        Elements elements = document.getElementsByAttributeValue("class", "tm-article-snippet");
-        if (elements.size() > 0) {
-            elements.forEach(element -> {
-                // Получаем элемент, содержащий URL картинки.
-                Element imgElement = element.getElementsByAttributeValue("class", "tm-article-snippet__lead-image").first();
-                if (imgElement != null) {
-                    String imgUrl = imgElement.attr("src");
-                    list.add(imgUrl);
-                }
-            });
+        val elements = document.getElementsByAttributeValue("class", "tm-article-snippet");
+        if (elements.isEmpty()) {
+            return list;
         }
+
+        elements.forEach(element -> {
+            // Получаем элемент, содержащий URL картинки.
+            val imgElement = element.getElementsByAttributeValue("class", "tm-article-snippet__lead-image").first();
+            if (imgElement == null) {
+                return;
+            }
+            list.add(imgElement.attr("src"));
+        });
         return list;
     }
 }

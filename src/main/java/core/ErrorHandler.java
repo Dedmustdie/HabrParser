@@ -10,5 +10,5 @@ public interface ErrorHandler {
      * @param sender класс отправитель.
      * @param errorText текст ошибки.
      */
-    void onError(Object sender, String errorText);
+    void onError(final Object sender, final String errorText);
 }
