@@ -1,7 +1,8 @@
 package core.habr;
 
-import core.ErrorHandler;
-import lombok.Getter;
+import core.habr.abstraction.ErrorHandler;
+import core.habr.abstraction.ParserSettings;
+import core.habr.constants.ParserSettingsConstants;
 import lombok.val;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -9,47 +10,46 @@ import org.json.simple.parser.ParseException;
 
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
 
 /**
  * Набор инструментов для работы с парсером настроек из json файла.
  */
-public class JsonParser {
-    @Getter
-    private String baseUrl = null;
-    @Getter
-    private String prefix = null;
-    @Getter
-    private String savePath = null;
-    @Getter
-    private boolean errorFlag = false;
+public class JsonParser extends ParserSettings {
 
     /**
-     * Осуществляет извлечение настроек из json файла.
-     *
-     * @param settingsName     название настройки в файле настроек.
-     * @param settingsFilePath путь к файлу настроек.
-     * @param errorHandler     обработчик ошибок.
+     * @param errorHandler обработчик ошибок.
      */
-    public JsonParser(final String settingsName, final String settingsFilePath, final ErrorHandler errorHandler) {
+    public JsonParser(final ErrorHandler errorHandler) {
         try {
             val parser = new JSONParser();
-            val reader = new FileReader(settingsFilePath);
+            val reader = new FileReader(ParserSettingsConstants.SETTINGS_PATH);
             val rootObject = (JSONObject) parser.parse(reader);
-            val settingsObject = (JSONObject) rootObject.get(settingsName);
             reader.close();
 
-            baseUrl = settingsObject.get("baseUrl").toString();
-            prefix = settingsObject.get("prefix").toString();
-            savePath = settingsObject.get("savePath").toString();
-        } catch (IOException | ParseException | NullPointerException e) {
+            baseUrl = rootObject.get(ParserSettingsConstants.BASE_URL_KEY).toString();
+            prefix = rootObject.get(ParserSettingsConstants.PREFIX_KEY).toString();
+            savePath = rootObject.get(ParserSettingsConstants.SAVE_PATH_KEY).toString();
+        } catch (IOException | ParseException | NullPointerException exception) {
             errorFlag = true;
-            // Добавляем обработчик ошибок в лист.
-            val onErrorList = new ArrayList<ErrorHandler>();
-            onErrorList.add(errorHandler);
-            // Вызываем обработчик ошибок.
-            onErrorList.get(0).onError(this, e.getMessage());
+            errorHandler.onError(exception.getMessage());
         }
     }
+
+    public JsonParser() {
+        try {
+            val parser = new JSONParser();
+            val reader = new FileReader(ParserSettingsConstants.SETTINGS_PATH);
+            val rootObject = (JSONObject) parser.parse(reader);
+            reader.close();
+
+            baseUrl = rootObject.get(ParserSettingsConstants.BASE_URL_KEY).toString();
+            prefix = rootObject.get(ParserSettingsConstants.PREFIX_KEY).toString();
+            savePath = rootObject.get(ParserSettingsConstants.SAVE_PATH_KEY).toString();
+        } catch (IOException | ParseException | NullPointerException exception) {
+            errorFlag = true;
+        }
+    }
+
+
 }
 

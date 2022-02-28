@@ -1,8 +1,9 @@
 package core.habr;
 
-import core.ErrorHandler;
-import core.habr.model.ArticleParser;
+import core.habr.abstraction.ErrorHandler;
+import core.habr.model.ArticlesParser;
 import core.habr.model.ImgParser;
+import core.habr.utilities.ConfigFileCreator;
 import lombok.val;
 
 import javax.swing.*;
@@ -63,6 +64,10 @@ public class UI extends JFrame {
         // Добавляем элементы на левую панель.
         leftPanel.add(scroll);
 
+        // Создаем конфиг. файл.
+        ConfigFileCreator configFileCreator = new ConfigFileCreator();
+        configFileCreator.createInitialSettingsJsonFile(new Error());
+
         // Обработчик нажатий на кнопку старт.
         startButton.addMouseListener(new MouseAdapter() {
             @Override
@@ -95,11 +100,11 @@ public class UI extends JFrame {
                 }
 
                 // Устанавливаем настройки.
-                val parser = new ParserWorker(new ArticleParser(), new ImgParser(), new HabrSettings(start, end, new Error()));
+                val parser = new ParserWorker(new ArticlesParser(), new ImgParser(), new HabrSettings(start, end, new Error()), new Error());
 
                 // Добавляем обработчики.
-                parser.setOnCompletedList(new Completed());
-                parser.setOnNewDataList(new NewData());
+                parser.setCompletedHandler(new Completed());
+                parser.setNewDataHandler(new NewData());
                 parser.start();
             }
         });
@@ -120,7 +125,7 @@ public class UI extends JFrame {
      */
     class Completed implements ParserWorker.OnCompletedHandler {
         @Override
-        public void onCompleted(final Object sender) {
+        public void onCompleted() {
             textArea.append("Парсинг завершен!\n");
         }
     }
@@ -130,7 +135,7 @@ public class UI extends JFrame {
      */
     class NewData implements ParserWorker.OnNewDataHandler {
         @Override
-        public void onNewData(final Object sender, final ArrayList<String> dataList) {
+        public void onNewData(final ArrayList<String> dataList) {
             for (String data : dataList) {
                 textArea.append(data);
             }
@@ -142,8 +147,8 @@ public class UI extends JFrame {
      */
     class Error implements ErrorHandler {
         @Override
-        public void onError(final Object sender, final String errorText) {
-            textArea.append("\nERROR: " + errorText + "\n");
+        public void onError(final String errorText) {
+            textArea.append("\nОшибка: " + errorText + "\n");
         }
     }
 }

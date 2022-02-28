@@ -1,4 +1,4 @@
-package core;
+package core.habr.abstraction;
 
 import lombok.Getter;
 
@@ -9,17 +9,20 @@ public abstract class ParserSettings {
     /**
      * Адрес сайта.
      */
-    public static String BASE_URL;
+    @Getter
+    protected String baseUrl;
 
     /**
      * Префих страницы.
      */
-    public static String PREFIX;
+    @Getter
+    protected String prefix;
 
     /**
      * Путь для скачивания файлов.
      */
-    public static String SAVE_PATH;
+    @Getter
+    protected String savePath;
 
     /**
      * Начало пагинации.
@@ -43,5 +46,5 @@ public abstract class ParserSettings {
      * Флаг ошибок.
      */
     @Getter
-    protected boolean errorFlag;
+    protected boolean errorFlag = false;
 }

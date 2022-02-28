@@ -1,7 +1,7 @@
 package core.habr;
 
-import core.ErrorHandler;
-import core.ParserSettings;
+import core.habr.abstraction.ErrorHandler;
+import core.habr.abstraction.ParserSettings;
 import lombok.val;
 
 /**
@@ -15,11 +15,27 @@ public class HabrSettings extends ParserSettings {
      */
     public HabrSettings(final int start, final int end, final ErrorHandler errorHandler) {
         this.errorHandler = errorHandler;
-        val jsonParser = new JsonParser("habrSettings", "src/main/resources/parser_settings.json", errorHandler);
+        val jsonParser = new JsonParser(errorHandler);
 
-        BASE_URL = jsonParser.getBaseUrl();
-        PREFIX = jsonParser.getPrefix();
-        SAVE_PATH = jsonParser.getSavePath();
+        baseUrl = jsonParser.getBaseUrl();
+        prefix = jsonParser.getPrefix();
+        savePath = jsonParser.getSavePath();
+        errorFlag = jsonParser.isErrorFlag();
+
+        startPoint = start;
+        endPoint = end;
+    }
+
+    /**
+     * @param start начало пагинации.
+     * @param end   конец пагинации.
+     */
+    public HabrSettings(final int start, final int end) {
+        val jsonParser = new JsonParser();
+
+        baseUrl = jsonParser.getBaseUrl();
+        prefix = jsonParser.getPrefix();
+        savePath = jsonParser.getSavePath();
         errorFlag = jsonParser.isErrorFlag();
 
         startPoint = start;

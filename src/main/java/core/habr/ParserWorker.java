@@ -1,7 +1,8 @@
 package core.habr;
 
-import core.ParserSettings;
-import core.habr.model.ArticleParser;
+import core.habr.abstraction.ErrorHandler;
+import core.habr.abstraction.ParserSettings;
+import core.habr.model.ArticlesParser;
 import core.habr.model.ImgParser;
 import lombok.val;
 
@@ -16,19 +17,23 @@ import lombok.Setter;
 public class ParserWorker {
     @Getter
     @Setter
-    private ArticleParser parser;
+    private ArticlesParser parser;
     @Getter
     @Setter
     private ImgParser imgParser;
     @Getter
     private final ParserSettings parserSettings;
     private final HtmlLoader loader;
+    @Setter
+    private OnNewDataHandler newDataHandler;
+    @Setter
+    private OnCompletedHandler completedHandler;
 
-    public ParserWorker(final ArticleParser parser, final ImgParser imgParser, final ParserSettings parserSettings) {
+    public ParserWorker(final ArticlesParser parser, final ImgParser imgParser, final ParserSettings parserSettings, final ErrorHandler errorHandler) {
         this.parser = parser;
         this.imgParser = imgParser;
         this.parserSettings = parserSettings;
-        loader = new HtmlLoader(parserSettings.getErrorHandler());
+        loader = new HtmlLoader(parserSettings, errorHandler);
     }
 
     /**
@@ -45,10 +50,9 @@ public class ParserWorker {
         /**
          * Выполняет ряд действией в случае получения новых данных.
          *
-         * @param sender класс отправитель.
-         * @param data   новые данные.
+         * @param data новые данные.
          */
-        void onNewData(final Object sender, ArrayList<String> data);
+        void onNewData(ArrayList<String> data);
     }
 
     /**
@@ -57,23 +61,8 @@ public class ParserWorker {
     public interface OnCompletedHandler {
         /**
          * Выполняет ряд действией в случае завершения парсинга.
-         *
-         * @param sender класс отправитель.
          */
-        void onCompleted(final Object sender);
-    }
-
-
-    private final ArrayList<OnNewDataHandler> onNewDataList = new ArrayList<>();
-
-    public void setOnNewDataList(final OnNewDataHandler newDataHandler) {
-        onNewDataList.add(newDataHandler);
-    }
-
-    private final ArrayList<OnCompletedHandler> onCompletedList = new ArrayList<>();
-
-    public void setOnCompletedList(final OnCompletedHandler completedHandler) {
-        onCompletedList.add(completedHandler);
+        void onCompleted();
     }
 
     /**
@@ -87,22 +76,20 @@ public class ParserWorker {
             for (int index = start; index <= end; index++) {
                 // Получаем страницу.
                 val document = loader.getSourceByPageId(index);
-                if (document != null) {
-                    // Создаем загрузчик картинок.
-                    val imgDownloader = new ImgDownloader(ParserSettings.SAVE_PATH, parserSettings.getErrorHandler());
+                if (document == null) {
+                    return;
+                }
+                // Создаем загрузчик картинок.
+                new ImgDownloader(parserSettings.getSavePath(), parserSettings.getErrorHandler()).download(imgParser.parse(document));
 
-                    // Загружаем изображения.
-                    imgDownloader.download(imgParser.parse(document));
-
-                    if (!onNewDataList.isEmpty()) {
-                        // Вызываем обработчик и передаем в него полученные данные.
-                        onNewDataList.get(0).onNewData(this, parser.parse(document));
-                    }
+                if (newDataHandler != null) {
+                    // Вызываем обработчик и передаем в него полученные данные.
+                    newDataHandler.onNewData(parser.parse(document));
                 }
             }
-            if (!onCompletedList.isEmpty()) {
+            if (completedHandler != null) {
                 // Вызываем обработчик завершения парсинга.
-                onCompletedList.get(0).onCompleted(this);
+                completedHandler.onCompleted();
             }
         }
     }

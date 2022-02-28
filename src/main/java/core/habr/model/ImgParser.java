@@ -1,6 +1,8 @@
 package core.habr.model;
 
+import core.habr.constants.ParserConstants;
 import lombok.val;
+import org.apache.commons.collections4.CollectionUtils;
 import org.jsoup.nodes.Document;
 
 import java.util.ArrayList;
@@ -18,18 +20,18 @@ public class ImgParser {
     public ArrayList<String> parse(final Document document) {
         val list = new ArrayList<String>();
 
-        val elements = document.getElementsByAttributeValue("class", "tm-article-snippet");
-        if (elements.isEmpty()) {
+        val elements = document.getElementsByAttributeValue(ParserConstants.CLASS_ATR_NAME, ParserConstants.ARTICLE_ATR_VALUE);
+        if (CollectionUtils.isEmpty(elements)) {
             return list;
         }
 
         elements.forEach(element -> {
             // Получаем элемент, содержащий URL картинки.
-            val imgElement = element.getElementsByAttributeValue("class", "tm-article-snippet__lead-image").first();
+            val imgElement = element.getElementsByAttributeValue(ParserConstants.CLASS_ATR_NAME, ParserConstants.IMG_ATR_VALUE).first();
             if (imgElement == null) {
                 return;
             }
-            list.add(imgElement.attr("src"));
+            list.add(imgElement.attr(ParserConstants.SRC_ATR_NAME));
         });
         return list;
     }
