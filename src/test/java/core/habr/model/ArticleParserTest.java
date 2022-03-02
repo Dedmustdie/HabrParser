@@ -1,7 +1,8 @@
 package core.habr.model;
 
-import core.habr.HabrSettings;
 import core.habr.HtmlLoader;
+import core.habr.settings.HabrSettings;
+import core.habr.utilities.ConfigFileCreator;
 import lombok.val;
 import org.junit.Assert;
 import org.junit.Test;
@@ -12,6 +13,10 @@ public class ArticleParserTest {
      */
     @Test
     public void articlesSumCountTest() {
+        // Создаем конфиг. файл.
+        ConfigFileCreator configFileCreator = new ConfigFileCreator();
+        configFileCreator.createInitialSettingsJsonFile();
+
         int articlesCount = 0;
         val parserSettings = new HabrSettings(1, 10);
 
@@ -20,7 +25,7 @@ public class ArticleParserTest {
             if (document == null) {
                 return;
             }
-            articlesCount += new ArticlesParser().parse(document).size();
+            articlesCount += new ArticlesParser(parserSettings).parse(document).size();
         }
 
         // На каждой странице должно быть 20 статей => на 10 страницах - 200 статей.
@@ -34,6 +39,10 @@ public class ArticleParserTest {
      */
     @Test
     public void articleCountTest() {
+        // Создаем конфиг. файл.
+        ConfigFileCreator configFileCreator = new ConfigFileCreator();
+        configFileCreator.createInitialSettingsJsonFile();
+
         val parserSettings = new HabrSettings(1, 10);
         boolean errorFlag = false;
 
@@ -46,7 +55,7 @@ public class ArticleParserTest {
             // На каждой странице должно быть 20 статей.
             // Парсер возвращает список строк, для каждой статьи выделно 3 строки =>
             // делим размер списка на 3.
-            if (new ArticlesParser().parse(document).size() / 3 != 20) {
+            if (new ArticlesParser(parserSettings).parse(document).size() / 3 != 20) {
                 errorFlag = true;
                 break;
             }

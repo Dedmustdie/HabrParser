@@ -1,8 +1,7 @@
 package core.habr;
 
 import core.habr.abstraction.ErrorHandler;
-import core.habr.model.ArticlesParser;
-import core.habr.model.ImgParser;
+import core.habr.settings.HabrSettings;
 import core.habr.utilities.ConfigFileCreator;
 import lombok.val;
 
@@ -10,7 +9,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Отвечает за реализацию пользовательского интерфейса пользователя.
@@ -100,7 +99,7 @@ public class UI extends JFrame {
                 }
 
                 // Устанавливаем настройки.
-                val parser = new ParserWorker(new ArticlesParser(), new ImgParser(), new HabrSettings(start, end, new Error()), new Error());
+                val parser = new ParserWorker(new HabrSettings(start, end, new Error()), new Error());
 
                 // Добавляем обработчики.
                 parser.setCompletedHandler(new Completed());
@@ -135,7 +134,7 @@ public class UI extends JFrame {
      */
     class NewData implements ParserWorker.OnNewDataHandler {
         @Override
-        public void onNewData(final ArrayList<String> dataList) {
+        public void onNewData(final List<String> dataList) {
             for (String data : dataList) {
                 textArea.append(data);
             }

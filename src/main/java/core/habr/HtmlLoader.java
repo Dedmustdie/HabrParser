@@ -35,9 +35,9 @@ public class HtmlLoader {
         try {
             // Формирование текущего URL.
             return Jsoup.connect(url.replace("{CurrentId}", Integer.toString(id))).get();
-        } catch (IOException exception) {
+        } catch (IOException ex) {
             if (errorHandler != null) {
-                errorHandler.onError(exception.getMessage());
+                errorHandler.onError(ex.getMessage());
             }
             return null;
         }

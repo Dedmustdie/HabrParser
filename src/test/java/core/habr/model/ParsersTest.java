@@ -1,8 +1,9 @@
 package core.habr.model;
 
-import core.habr.HabrSettings;
 import core.habr.HtmlLoader;
 import core.habr.constants.Constants;
+import core.habr.settings.HabrSettings;
+import core.habr.utilities.ConfigFileCreator;
 import lombok.val;
 import org.junit.Assert;
 import org.junit.Test;
@@ -15,6 +16,10 @@ public class ParsersTest {
      */
     @Test
     public void sumCountTest() {
+        // Создаем конфиг. файл.
+        ConfigFileCreator configFileCreator = new ConfigFileCreator();
+        configFileCreator.createInitialSettingsJsonFile();
+
         int imgParserUrlCount = 0;
         int articlesParserUrlCount = 200;
 
@@ -27,7 +32,7 @@ public class ParsersTest {
                 return;
             }
 
-            val articlesList = new ArticlesParser().parse(document);
+            val articlesList = new ArticlesParser(parserSettings).parse(document);
 
             // Для ArticlesParser:
             // если для каждой статьи будет приложено изображение, то в сумме с 10 страниц
@@ -35,14 +40,14 @@ public class ParsersTest {
             // Каждую статью проверяем на наличие изображения. Если изображение отсутствует -
             // вычитаем 1 из максимально возможного кол-ва url.
             for (int urlNumber = 2; urlNumber < articlesList.size(); urlNumber += 3) {
-                if (Objects.equals(articlesList.get(urlNumber), "Изображение отсутствует или произошла ошибка!" + Constants.EMPTY_LINE)) {
+                if (Objects.equals(articlesList.get(urlNumber), parserSettings.getImgParseError() + Constants.EMPTY_LINE)) {
                     articlesParserUrlCount--;
                 }
             }
 
             // Для ImgParser:
             // imgParser вернет список целеком состоящий из существующих url,
-            imgParserUrlCount += new ImgParser().parse(document).size();
+            imgParserUrlCount += new ImgParser(parserSettings).parse(document).size();
         }
 
         Assert.assertEquals(articlesParserUrlCount, imgParserUrlCount);

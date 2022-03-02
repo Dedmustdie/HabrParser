@@ -6,7 +6,7 @@ import core.habr.model.ArticlesParser;
 import core.habr.model.ImgParser;
 import lombok.val;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -17,23 +17,23 @@ import lombok.Setter;
 public class ParserWorker {
     @Getter
     @Setter
-    private ArticlesParser parser;
+    private ArticlesParser articlesParser;
     @Getter
     @Setter
     private ImgParser imgParser;
     @Getter
     private final ParserSettings parserSettings;
-    private final HtmlLoader loader;
+    private final HtmlLoader htmlLoader;
     @Setter
     private OnNewDataHandler newDataHandler;
     @Setter
     private OnCompletedHandler completedHandler;
 
-    public ParserWorker(final ArticlesParser parser, final ImgParser imgParser, final ParserSettings parserSettings, final ErrorHandler errorHandler) {
-        this.parser = parser;
-        this.imgParser = imgParser;
+    public ParserWorker(final ParserSettings parserSettings, final ErrorHandler errorHandler) {
+        this.articlesParser = new ArticlesParser(parserSettings);
+        this.imgParser = new ImgParser(parserSettings);
+        this.htmlLoader = new HtmlLoader(parserSettings, errorHandler);
         this.parserSettings = parserSettings;
-        loader = new HtmlLoader(parserSettings, errorHandler);
     }
 
     /**
@@ -52,7 +52,7 @@ public class ParserWorker {
          *
          * @param data новые данные.
          */
-        void onNewData(ArrayList<String> data);
+        void onNewData(List<String> data);
     }
 
     /**
@@ -75,7 +75,7 @@ public class ParserWorker {
 
             for (int index = start; index <= end; index++) {
                 // Получаем страницу.
-                val document = loader.getSourceByPageId(index);
+                val document = htmlLoader.getSourceByPageId(index);
                 if (document == null) {
                     return;
                 }
@@ -84,7 +84,7 @@ public class ParserWorker {
 
                 if (newDataHandler != null) {
                     // Вызываем обработчик и передаем в него полученные данные.
-                    newDataHandler.onNewData(parser.parse(document));
+                    newDataHandler.onNewData(articlesParser.parse(document));
                 }
             }
             if (completedHandler != null) {
