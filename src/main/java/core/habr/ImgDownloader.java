@@ -4,7 +4,7 @@ import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
+import java.util.List;
 
 import core.habr.abstraction.ErrorHandler;
 import lombok.AllArgsConstructor;
@@ -27,11 +27,11 @@ public class ImgDownloader {
      *
      * @param urlList лист, который содержит URL картинок.
      */
-    public void download(final ArrayList<String> urlList) {
+    public void download(final List<String> urlList) {
         int index = 1;
         if (!(new File(savePath).exists())) {
-            File dir = new File(savePath);
-            dir.mkdir();
+            File imgDir = new File(savePath);
+            imgDir.mkdir();
         }
         for (val urlString : urlList) {
             try {
@@ -48,8 +48,8 @@ public class ImgDownloader {
                 // Выгружаем изображение в файл.
                 ImageIO.write(ImageIO.read(url), imgExtension, output);
                 index++;
-            } catch (IOException exception) {
-                errorHandler.onError(exception.getMessage());
+            } catch (IOException ex) {
+                errorHandler.onError(ex.getMessage());
             }
         }
     }

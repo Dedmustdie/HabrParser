@@ -13,4 +13,9 @@ public class Constants {
      * Перенос строки.
      */
     public static final String END_LINE = "\n";
+
+    /**
+     * Путь настроек парсера.
+     */
+    public static final String SETTINGS_PATH = "Config.json";
 }

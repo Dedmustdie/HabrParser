@@ -1,7 +1,6 @@
 package core.habr.utilities;
 
-import core.habr.constants.ErrorConstants;
-import core.habr.constants.ParserConstants;
+import core.habr.abstraction.ParserSettings;
 import lombok.val;
 import org.jsoup.nodes.Element;
 
@@ -17,8 +16,8 @@ public class ParserUtilites {
      * @param value   значение атрибута.
      * @return извлеченный элемент.
      */
-    public static Element findElementByClassAttrValue(final Element element, final String value) {
-        return element.getElementsByAttributeValue("class", value)
+    public static Element findElementByClassAttrValue(final Element element, final String value, final ParserSettings parserSettings) {
+        return element.getElementsByAttributeValue(parserSettings.getGeneralAtrName(), value)
                 .first();
     }
 
@@ -26,50 +25,50 @@ public class ParserUtilites {
      * Извлекает URL изображения с указанным значением атрибута.
      *
      * @param element родительский элемент.
-     * @param value   значение атрибута.
+     * @param parserSettings  настройки парсера.
      * @return URL изображения статьи.
      */
-    public static String extractDataFromImgElement(final Element element, final String value) {
+    public static String extractDataFromImgElement(final Element element, final ParserSettings parserSettings) {
         // Получаем элемент, содержащий URL картинки.
-        val imgElement = findElementByClassAttrValue(element, value);
+        val imgElement = findElementByClassAttrValue(element, parserSettings.getImgAtrValue(), parserSettings);
         // Если не удалось найти URL изображения.
         if (imgElement != null) {
-            return imgElement.attr(ParserConstants.SRC_ATR_NAME);
+            return imgElement.attr(parserSettings.getImgUrlAtrName());
         }
-        return ErrorConstants.IMG_PARSE_ERROR;
+        return parserSettings.getImgParseError();
     }
 
     /**
      * Извлекает текст статьи с указанными значениями атрибута.
      *
      * @param element     родительский элемент.
-     * @param firstValue  первое значение атрибута.
-     * @param secondValue второе значение атрибута.
+     * @param parserSettings  настройки парсера.
      * @return текст статьи.
      */
-    public static String extractDataFromTextElement(final Element element, final String firstValue, final String secondValue) {
+    public static String extractDataFromTextElement(final Element element, final ParserSettings parserSettings) {
         // Получаем элемент, содержащий текст статьи.
-        val textElement = Optional.ofNullable(findElementByClassAttrValue(element, firstValue))
+        val textElement = Optional.ofNullable(findElementByClassAttrValue(element, parserSettings.getFirstTextAtrValue(), parserSettings))
                 // Если элемент, содержащий текст статьи, имеет альтернативное название класса.
-                .orElseGet(() -> findElementByClassAttrValue(element, secondValue));
+                .orElseGet(() -> findElementByClassAttrValue(element, parserSettings.getSecondTextAtrValue(), parserSettings));
+
         // Если произошла ошибка парсинга текста.
         if (textElement != null) {
             return textElement.text();
         }
-        return ErrorConstants.TEXT_PARSE_ERROR;
+        return parserSettings.getTextParseError();
     }
 
     /**
      * Извлекает заголовок статьи с указанным значением атрибута.
      *
      * @param element родительский элемент.
-     * @param value   значение атрибута.
+     * @param parserSettings настройки парсера.
      * @return заголовок статьи.
      */
-    public static String extractDataFromHeaderElement(final Element element, final String value) {
+    public static String extractDataFromHeaderElement(final Element element, final ParserSettings parserSettings) {
 
         // Если ошибка парсинга заголовка не произошла.
-        val firstElementByClassAttrValue = findElementByClassAttrValue(element, value);
+        val firstElementByClassAttrValue = findElementByClassAttrValue(element, parserSettings.getHeadAtrValue(), parserSettings);
         if (firstElementByClassAttrValue != null &&
                 !firstElementByClassAttrValue.children().isEmpty()) {
             // Получаем элемент, содержащий заголовок статьи.
@@ -77,6 +76,6 @@ public class ParserUtilites {
                     .child(0)
                     .text();
         }
-        return ErrorConstants.HEADER_PARSE_ERROR;
+        return parserSettings.getHeaderParseError();
     }
 }
