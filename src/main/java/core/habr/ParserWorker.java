@@ -2,6 +2,8 @@ package core.habr;
 
 import core.habr.abstraction.ErrorHandler;
 import core.habr.abstraction.ParserSettings;
+import core.habr.abstraction.ProgressHandler;
+import core.habr.abstraction.ProgressHandlerMethod;
 import core.habr.model.ArticlesParser;
 import core.habr.model.ImgParser;
 import lombok.val;
@@ -28,10 +30,14 @@ public class ParserWorker {
     private OnNewDataHandler newDataHandler;
     @Setter
     private OnCompletedHandler completedHandler;
+    @Setter
+    private ProgressHandler progressHandler;
+    Runnable runnable;
 
-    public ParserWorker(final ParserSettings parserSettings, final ErrorHandler errorHandler) {
+    public ParserWorker(final ParserSettings parserSettings, final ErrorHandler errorHandler, final ProgressHandler progressHandler) {
         this.articlesParser = new ArticlesParser(parserSettings);
         this.imgParser = new ImgParser(parserSettings);
+        this.progressHandler = progressHandler;
         this.htmlLoader = new HtmlLoader(parserSettings, errorHandler);
         this.parserSettings = parserSettings;
     }
@@ -40,7 +46,9 @@ public class ParserWorker {
      * Запускает парсинг сайта.
      */
     public void start() {
-        worker();
+        addParserToThread();
+        val parser = new Thread(runnable);
+        parser.start();
     }
 
     /**
@@ -66,31 +74,40 @@ public class ParserWorker {
     }
 
     /**
-     * Производит действия, связанные с парсингом сайта.
+     * Добавляет действия, связанные с парсингом сайта, в отдельный поток.
      */
-    private void worker() {
-        if (!parserSettings.isErrorFlag()) {
-            val start = parserSettings.getStartPoint();
-            val end = parserSettings.getEndPoint();
+    private void addParserToThread() {
+        runnable = () -> {
+            if (!parserSettings.isErrorFlag()) {
+                val start = parserSettings.getStartPoint();
+                val end = parserSettings.getEndPoint();
 
-            for (int index = start; index <= end; index++) {
-                // Получаем страницу.
-                val document = htmlLoader.getSourceByPageId(index);
-                if (document == null) {
-                    return;
+                progressHandler.setBarDivisionCount(end * 3);
+                var progressIndex = 0;
+                for (int index = start; index <= end; index++) {
+                    progressHandler.onProgress("Получение страницы...", progressIndex++);
+                    // Получаем страницу.
+                    val document = htmlLoader.getSourceByPageId(index);
+                    if (document == null) {
+                        return;
+                    }
+
+                    progressHandler.onProgress("Парсинг и загрузка изображений...", progressIndex++);
+                    // Создаем загрузчик картинок.
+                    new ImgDownloader(parserSettings.getSavePath(), parserSettings.getErrorHandler()).download(imgParser.parse(document));
+
+                    if (newDataHandler != null) {
+                        progressHandler.onProgress("Парсинг данных...", progressIndex++);
+                        // Вызываем обработчик и передаем в него полученные данные.
+                        newDataHandler.onNewData(articlesParser.parse(document));
+                    }
                 }
-                // Создаем загрузчик картинок.
-                new ImgDownloader(parserSettings.getSavePath(), parserSettings.getErrorHandler()).download(imgParser.parse(document));
-
-                if (newDataHandler != null) {
-                    // Вызываем обработчик и передаем в него полученные данные.
-                    newDataHandler.onNewData(articlesParser.parse(document));
+                if (completedHandler != null) {
+                    // Вызываем обработчик завершения парсинга.
+                    completedHandler.onCompleted();
+                    progressHandler.onProgress("Парсинг завершен!.", progressIndex);
                 }
             }
-            if (completedHandler != null) {
-                // Вызываем обработчик завершения парсинга.
-                completedHandler.onCompleted();
-            }
-        }
+        };
     }
 }

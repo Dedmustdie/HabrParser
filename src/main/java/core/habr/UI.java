@@ -1,8 +1,10 @@
 package core.habr;
 
 import core.habr.abstraction.ErrorHandler;
+import core.habr.abstraction.ProgressHandler;
 import core.habr.settings.HabrSettings;
 import core.habr.utilities.ConfigFileCreator;
+import core.habr.utilities.UiUtilites;
 import lombok.val;
 
 import javax.swing.*;
@@ -17,19 +19,31 @@ import java.util.List;
 public class UI extends JFrame {
     // Текстовые поля.
     final JTextArea textArea = new JTextArea();
-    final JTextField textStart = new JTextField(10);
-    final JTextField textEnd = new JTextField(10);
+    final JTextField startTextField = new JTextField(10);
+    final JTextField endTextField = new JTextField(10);
+    final JProgressBar progressBar = new JProgressBar();
+    final JTextField processTextField = new JTextField(10);
+    // Создаем две панели.
+    final JPanel rightPanel = new JPanel();
+    final JPanel leftPanel = new JPanel();
+    // Создаем кнопки.
+    final JButton startButton = new JButton("Start");
+    final JButton clearButton = new JButton("Clear");
+    // Создаем текстовую панель с прокруткой.
+    final JScrollPane scroll = new JScrollPane(textArea,
+            JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+            JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
 
     public UI() {
         JFrame.setDefaultLookAndFeelDecorated(true);
         setTitle("Habr Parser");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        // Устанавливаем размер окна интерфейса неизменяемым.
-        setResizable(false);
 
-        // Создаем две панели.
-        val rightPanel = new JPanel();
-        val leftPanel = new JPanel();
+        setPreferredSize(new Dimension(1200, 500));
+        setMaximumSize(new Dimension(2000, 600));
+        setMinimumSize(new Dimension(600, 500));
+
+        processTextField.setEnabled(false);
 
         // Указываем размеры панелей.
         rightPanel.setPreferredSize(new Dimension(200, 500));
@@ -37,28 +51,21 @@ public class UI extends JFrame {
 
         // Указываем привязки панелей.
         add(rightPanel, BorderLayout.EAST);
-        add(leftPanel, BorderLayout.WEST);
+        add(leftPanel, BorderLayout.CENTER);
 
         // Настраиваем сетку панелей.
-        rightPanel.setLayout(new GridLayout(0, 1, 5, 15));
+        rightPanel.setLayout(new GridLayout(0, 1, 0, 15));
         leftPanel.setLayout(new GridLayout(0, 1, 1, 1));
-
-        // Создаем кнопки.
-        val startButton = new JButton("Start");
-        val clearButton = new JButton("Clear");
 
         // Добавляем элементы на правую панель.
         rightPanel.add(new JLabel("Первая страница"));
-        rightPanel.add(textStart);
+        rightPanel.add(startTextField);
         rightPanel.add(new JLabel("Последняя страница"));
-        rightPanel.add(textEnd);
+        rightPanel.add(endTextField);
         rightPanel.add(startButton);
         rightPanel.add(clearButton);
-
-        // Создаем текстовую панель с прокруткой.
-        val scroll = new JScrollPane(textArea,
-                JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
-                JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+        rightPanel.add(processTextField);
+        rightPanel.add(progressBar);
 
         // Добавляем элементы на левую панель.
         leftPanel.add(scroll);
@@ -71,36 +78,38 @@ public class UI extends JFrame {
         startButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
+                startButton.setEnabled(false);
+                clearButton.setEnabled(false);
+                startTextField.setEnabled(false);
+                endTextField.setEnabled(false);
+
                 super.mouseClicked(e);
+                val startText = startTextField.getText();
+                val endText = endTextField.getText();
+                var validationFlag = true;
 
                 // Ограничения на вводимые данные.
-                if (!textStart.getText().matches("^(([1][0])|([1-9]))?")) {
-                    textStart.setText("1");
-                    if (!textEnd.getText().matches("^(([1][0])|([1-9]))?")) {
-                        textEnd.setText("1");
-                    }
+                if (!(UiUtilites.rangeTextValidation(startText))) {
+                    startTextField.setText("1");
+                    validationFlag = false;
+                }
+                if (!(UiUtilites.rangeTextValidation(endText))) {
+                    endTextField.setText("1");
+                    validationFlag = false;
+                }
+                if (!validationFlag) {
                     return;
                 }
 
-                if (!textEnd.getText().matches("^(([1][0])|([1-9]))?")) {
-                    textEnd.setText("1");
-                    if (!textStart.getText().matches("^(([1][0])|([1-9]))?")) {
-                        textStart.setText("1");
-                    }
-                    return;
-                }
-
-                int start = Integer.parseInt(textStart.getText());
-                int end = Integer.parseInt(textEnd.getText());
+                val start = Integer.parseInt(startText);
+                val end = Integer.parseInt(endText);
 
                 if (start > end) {
-                    textStart.setText(textEnd.getText());
+                    startTextField.setText(endTextField.getText());
                     return;
                 }
-
                 // Устанавливаем настройки.
-                val parser = new ParserWorker(new HabrSettings(start, end, new Error()), new Error());
-
+                val parser = new ParserWorker(new HabrSettings(start, end, new Error()), new Error(), new Progress());
                 // Добавляем обработчики.
                 parser.setCompletedHandler(new Completed());
                 parser.setNewDataHandler(new NewData());
@@ -126,6 +135,10 @@ public class UI extends JFrame {
         @Override
         public void onCompleted() {
             textArea.append("Парсинг завершен!\n");
+            startButton.setEnabled(true);
+            clearButton.setEnabled(true);
+            startTextField.setEnabled(true);
+            endTextField.setEnabled(true);
         }
     }
 
@@ -148,6 +161,18 @@ public class UI extends JFrame {
         @Override
         public void onError(final String errorText) {
             textArea.append("\nОшибка: " + errorText + "\n");
+        }
+    }
+
+    /**
+     * Обработчик прогресса приложения.
+     */
+    class Progress extends ProgressHandler {
+        @Override
+        public void onProgress(String processName, int progressValue) {
+            progressBar.setMaximum(getBarDivisionCount());
+            processTextField.setText(processName);
+            progressBar.setValue(progressValue);
         }
     }
 }
